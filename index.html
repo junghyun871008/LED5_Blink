@@ -104,4 +104,121 @@
             <div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div>
         </div>
         <div class="button-container">
-            <button class="action-button run-button" data-section
+            <button class="action-button run-button" data-section="3">실행</button>
+            <button class="action-button stop-button">중지</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>4. 랜덤하게 0.5초 깜빡이기 (반복)</h2>
+        <div class="light-container" id="section4-lights">
+            <div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div>
+        </div>
+        <div class="button-container">
+            <button class="action-button run-button" data-section="4">실행</button>
+            <button class="action-button stop-button">중지</button>
+        </div>
+    </div>
+
+<script>
+    let activeSection = null;
+    let randomBlinkInterval = null;
+
+    // '실행' 버튼들에 이벤트 리스너 추가
+    document.querySelectorAll('.run-button').forEach(button => {
+        button.addEventListener('click', handleAnimation);
+    });
+
+    // '중지' 버튼들에 이벤트 리스너 추가
+    document.querySelectorAll('.stop-button').forEach(button => {
+        button.addEventListener('click', stopAllAnimations);
+    });
+
+    // 모든 애니메이션을 중지하고 불빛을 끄는 함수
+    function stopAllAnimations() {
+        activeSection = null; // 진행 중인 while 루프 중단
+        clearInterval(randomBlinkInterval); // 랜덤 깜빡임 인터벌 중단
+        document.querySelectorAll('.light').forEach(light => {
+            light.classList.remove('on'); // 모든 불빛 끄기
+        });
+    }
+
+    function handleAnimation(event) {
+        const sectionId = event.target.dataset.section;
+        
+        // 실행 전, 이전에 동작하던 모든 애니메이션을 중지
+        stopAllAnimations();
+        
+        setTimeout(() => {
+            activeSection = sectionId;
+            const lights = document.querySelectorAll(`#section${sectionId}-lights .light`);
+            
+            switch (sectionId) {
+                case '1': animateSequentialOn(lights, sectionId); break;
+                case '2': animateSequentialBlink(lights, sectionId); break;
+                case '3': animateCaterpillar(lights, sectionId); break;
+                case '4': animateRandomBlink(lights, sectionId); break;
+            }
+        }, 100);
+    }
+    
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    async function animateSequentialOn(lights, sectionId) {
+        while (activeSection === sectionId) {
+            for (let i = 0; i < lights.length; i++) {
+                if (activeSection !== sectionId) return;
+                lights[i].classList.add('on');
+                await sleep(500);
+            }
+            await sleep(1000);
+            if (activeSection !== sectionId) return;
+            lights.forEach(light => light.classList.remove('on'));
+            await sleep(500);
+        }
+    }
+
+    async function animateSequentialBlink(lights, sectionId) {
+        while (activeSection === sectionId) {
+            for (let i = 0; i < lights.length; i++) {
+                if (activeSection !== sectionId) return;
+                lights[i].classList.add('on');
+                await sleep(600);
+                if (activeSection !== sectionId) return;
+                lights[i].classList.remove('on');
+                await sleep(300);
+            }
+            await sleep(1000);
+        }
+    }
+
+    async function animateCaterpillar(lights, sectionId) {
+        while (activeSection === sectionId) {
+            for (let i = 0; i < lights.length; i++) {
+                if (activeSection !== sectionId) return;
+                lights[i].classList.add('on');
+                if (i > 0) {
+                    lights[i - 1].classList.remove('on');
+                }
+                await sleep(600);
+            }
+            if (activeSection !== sectionId) return;
+            lights[lights.length - 1].classList.remove('on');
+            await sleep(1000);
+        }
+    }
+
+    function animateRandomBlink(lights, sectionId) {
+        randomBlinkInterval = setInterval(() => {
+            if (activeSection !== sectionId) {
+                clearInterval(randomBlinkInterval);
+                return;
+            }
+            lights.forEach(light => light.classList.remove('on'));
+            const randomIndex = Math.floor(Math.random() * lights.length);
+            lights[randomIndex].classList.add('on');
+        }, 500);
+    }
+</script>
+</body>
+</html>
