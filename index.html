@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>반복 불빛 애니메이션</title>
+<style>
+    /* CSS 스타일은 이전과 동일합니다 */
+    body {
+        font-family: sans-serif;
+        background-color: #f0f2f5;
+        color: #333;
+        padding: 20px;
+    }
+    .section {
+        background-color: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h2 {
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+    }
+    .light-container {
+        display: flex;
+        gap: 15px;
+        padding: 20px 0;
+    }
+    .light {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #34495e;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .light.on {
+        background-color: #f1c40f;
+        box-shadow: 0 0 15px #f1c40f, 0 0 25px #f1c40f;
+    }
+    .run-button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        border: none;
+        background-color: #3498db;
+        color: white;
+        border-radius: 5px;
+        transition: background-color 0.2s;
+    }
+    .run-button:hover {
+        background-color: #2980b9;
+    }
+</style>
+</head>
+<body>
+
+    <h1>💡 반복 불빛 애니메이션</h1>
+
+    <div class="section">
+        <h2>1. 순차적으로 켜지기 (반복)</h2>
+        <div class="light-container" id="section1-lights">
+            <div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div>
+        </div>
+        <button class="run-button" data-section="1">실행</button>
+    </div>
+
+    <div class="section">
+        <h2>2. 순차적으로 켜졌다 꺼지기 (반복)</h2>
+        <div class="light-container" id="section2-lights">
+            <div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div>
+        </div>
+        <button class="run-button" data-section="2">실행</button>
+    </div>
+
+    <div class="section">
+        <h2>3. 다음 불빛 켜지면 이전 불빛 꺼지기 (반복)</h2>
+        <div class="light-container" id="section3-lights">
+            <div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div>
+        </div>
+        <button class="run-button" data-section="3">실행</button>
+    </div>
+
+    <div class="section">
+        <h2>4. 랜덤하게 0.5초 깜빡이기 (반복)</h2>
+        <div class="light-container" id="section4-lights">
+            <div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div>
+        </div>
+        <button class="run-button" data-section="4">실행</button>
+    </div>
+
+<script>
+    // 현재 실행 중인 애니메이션을 제어하기 위한 변수들
+    let activeSection = null;
+    let randomBlinkInterval = null;
+
+    // 모든 버튼에 클릭 이벤트 리스너 추가
+    document.querySelectorAll('.run-button').forEach(button => {
+        button.addEventListener('click', handleAnimation);
+    });
+
+    // 메인 컨트롤 함수
+    function handleAnimation(event) {
+        const sectionId = event.target.dataset.section;
+
+        // 이전에 실행되던 모든 애니메이션을 중지
+        activeSection = null;
+        clearInterval(randomBlinkInterval);
+        document.querySelectorAll('.light').forEach(light => light.classList.remove('on'));
+        
+        // 새로운 애니메이션 시작 (setTimeout으로 약간의 시간차를 둬서 안정적으로 중지/시작)
+        setTimeout(() => {
+            activeSection = sectionId; // 현재 활성화된 섹션 ID 설정
+            const lights = document.querySelectorAll(`#section${sectionId}-lights .light`);
+            
+            switch (sectionId) {
+                case '1': animateSequentialOn(lights, sectionId); break;
+                case '2': animateSequentialBlink(lights, sectionId); break;
+                case '3': animateCaterpillar(lights, sectionId); break;
+                case '4': animateRandomBlink(lights, sectionId); break;
+            }
+        }, 100);
+    }
+    
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    // 1. 순차적으로 켜지기 (반복)
+    async function animateSequentialOn(lights, sectionId) {
+        while (activeSection === sectionId) { // activeSection이 현재 섹션 ID와 일치하는 동안 무한 반복
+            // 순서대로 불 켜기
+            for (let i = 0; i < lights.length; i++) {
+                if (activeSection !== sectionId) return; // 중간에 다른 애니메이션이 시작되면 즉시 종료
+                lights[i].classList.add('on');
+                await sleep(500); // 딜레이 시간 증가 (0.3초 -> 0.5초)
+            }
+            await sleep(1000); // 모두 켜진 상태로 1초 대기
+            if (activeSection !== sectionId) return;
+            // 다음 반복을 위해 모든 불 끄기
+            lights.forEach(light => light.classList.remove('on'));
+            await sleep(500); // 꺼진 상태로 0.5초 대기
+        }
+    }
+
+    // 2. 순차적으로 켜졌다 꺼지기 (반복)
+    async function animateSequentialBlink(lights, sectionId) {
+        while (activeSection === sectionId) {
+            for (let i = 0; i < lights.length; i++) {
+                if (activeSection !== sectionId) return;
+                lights[i].classList.add('on');
+                await sleep(600); // 켜진 시간 증가 (0.4초 -> 0.6초)
+                if (activeSection !== sectionId) return;
+                lights[i].classList.remove('on');
+                await sleep(300); // 꺼진 시간 증가 (0.1초 -> 0.3초)
+            }
+            await sleep(1000); // 전체 사이클 반복 전 1초 대기
+        }
+    }
+
+    // 3. 다음 불빛 켜지면 이전 불빛 꺼지기 (반복)
+    async function animateCaterpillar(lights, sectionId) {
+        while (activeSection === sectionId) {
+            for (let i = 0; i < lights.length; i++) {
+                if (activeSection !== sectionId) return;
+                lights[i].classList.add('on');
+                if (i > 0) {
+                    lights[i - 1].classList.remove('on');
+                }
+                await sleep(600); // 이동 시간 증가 (0.4초 -> 0.6초)
+            }
+             // 마지막 불빛 끄기
+            if (activeSection !== sectionId) return;
+            lights[lights.length - 1].classList.remove('on');
+            await sleep(1000); // 전체 사이클 반복 전 1초 대기
+        }
+    }
+
+    // 4. 랜덤하게 0.5초 깜빡이기 (반복)
+    function animateRandomBlink(lights, sectionId) {
+        // 기존의 setInterval을 사용하므로 코드는 거의 동일
+        randomBlinkInterval = setInterval(() => {
+            if (activeSection !== sectionId) {
+                clearInterval(randomBlinkInterval); // 다른 애니메이션이 시작되면 반복 중단
+                return;
+            }
+            lights.forEach(light => light.classList.remove('on'));
+            const randomIndex = Math.floor(Math.random() * lights.length);
+            lights[randomIndex].classList.add('on');
+        }, 500);
+    }
+</script>
+</body>
+</html>
+---
+
+### ## 주요 변경사항 설명
+
+* **`activeSection` 변수**: 현재 어떤 섹션의 애니메이션이 실행되어야 하는지를 저장하는 변수입니다. 다른 버튼을 누르면 이 변수값이 바뀌면서, 이전 애니메이션의 반복문(`while`)이 스스로 멈추게 됩니다.
+* **`while (activeSection === sectionId)`**: 1, 2, 3번 애니메이션 함수를 `while` 문으로 감싸서 무한 반복되도록 만들었습니다. 이 반복문은 `activeSection` 변수값이 현재 자신의 `sectionId`와 같을 때만 계속 실행됩니다.
+* **딜레이 시간 조정**: `sleep()` 함수에 들어가는 숫자(밀리초 단위)를 더 크게 조정하여 애니메이션이 더 천천히 진행되도록 했습니다.
+* **사이클 간 대기**: 각 애니메이션의 한 사이클이 끝나고 다음 사이클이 시작되기 전에 잠시 대기하는 시간(`await sleep(1000)`)을 추가하여 반복되는 모습을 더 명확하게 볼 수 있도록 했습니다.
+
+이제 애니메이션이 좀 더 보기 편해졌을 겁니다. 추가로 수정하고 싶은 점이 있다면 편하게 말씀해주세요!
